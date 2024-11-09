@@ -1,0 +1,18 @@
+version: '3'
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+  backend_django:
+    build: ./backend_django
+    ports:
+      - "8080:8080"
+  backend_flask:
+    build: ./backend_flask
+    ports:
+      - "5000:5000"
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
