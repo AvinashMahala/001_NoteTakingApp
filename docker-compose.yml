@@ -1,18 +1,73 @@
-version: '3'
 services:
-  frontend:
-    build: ./frontend
+  # 1. Zookeeper - Starts first as it is required by Kafka for coordination
+  zookeeper:
+    image: wurstmeister/zookeeper
     ports:
-      - "3000:3000"
-  backend_django:
+      - "2181:2181"  # Zookeeper listens on port 2181 for Kafka
+
+  # 2. Kafka - Message broker depends on Zookeeper
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"  # Kafka listens on port 9092 for incoming connections
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Connects to Zookeeper
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092  # Listen on all interfaces inside the container
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092  # Advertise the Kafka broker within Docker network
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # Topic replication factor
+    depends_on:
+      - zookeeper  # Ensures Kafka waits for Zookeeper to start
+
+  # 3. Database (Optional) - Starts after Kafka (if using PostgreSQL)
+  # Uncomment the following lines if using a PostgreSQL database
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: dbname
+  #   ports:
+  #     - "5432:5432"
+  #   depends_on:
+  #     - kafka  # Ensures database starts after Kafka
+
+  # 4. Redis (Optional) - Starts after Kafka for caching purposes
+  # Uncomment the following lines if using Redis for caching
+  # redis:
+  #   image: redis:alpine
+  #   ports:
+  #     - "6379:6379"
+  #   depends_on:
+  #     - kafka  # Ensures Redis starts after Kafka
+
+  # 5. Backend Django - Main application service, starts after all dependencies
+  django:
     build: ./backend_django
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Django listens on port 8080 for API requests
+    environment:
+      - DJANGO_SETTINGS_MODULE=note_api.settings
+    depends_on:
+      - kafka  # Waits for Kafka to start
+      - zookeeper  # Waits for Zookeeper
+      # Uncomment if using PostgreSQL and Redis
+      # - db
+      # - redis
+    command: sh -c "sleep 20 && python manage.py runserver 0.0.0.0:8080"  # Adds a delay to ensure Kafka readiness
+
+  # 6. Backend Flask - Microservice that depends on Django backend
   backend_flask:
     build: ./backend_flask
     ports:
-      - "5000:5000"
-  kafka:
-    image: wurstmeister/kafka
+      - "5000:5000"  # Flask listens on port 5000 for internal API requests
+    depends_on:
+      - django  # Ensures Flask starts after Django
+
+  # 7. Frontend - React or similar frontend application, depends on backend services
+  frontend:
+    build: ./frontend
     ports:
-      - "9092:9092"
+      - "3000:3000"  # Frontend listens on port 3000 for client requests
+    depends_on:
+      - django  # Waits for Django to start
+      - backend_flask  # Waits for Flask to start
