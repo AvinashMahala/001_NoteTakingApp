@@ -134,8 +134,10 @@ If you prefer to run services without Docker, follow these instructions:
 
 4. Start Django server:
    ```bash
-   python manage.py runserver
+   python manage.py runserver 8080
    ```
+
+   You should see the Django development server running at : Starting development server at http://127.0.0.1:8080/
 
 ### c. Run Flask Consumer
 1. In a separate terminal, navigate to the Flask microservice folder:
