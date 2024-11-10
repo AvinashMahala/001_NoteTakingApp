@@ -1,19 +1,11 @@
 // frontend/src/services/noteService.ts
 import axios from 'axios';
+import { Note } from "./../types/noteTypes";
 
 // Set the base URL for Axios from environment variables
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
 });
-
-// Define interfaces for Note data
-export interface Note {
-  id: number;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
 
 // Fetch all notes
 export const fetchNotes = async (): Promise<Note[]> => {
