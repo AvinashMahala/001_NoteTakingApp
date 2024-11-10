@@ -46,6 +46,7 @@ services:
     ports:
       - "8080:8080"  # Django listens on port 8080 for API requests
     volumes:
+      - ./backend_django:/app  # Mounts the entire backend_django directory
       - ./backend_django/db.sqlite3:/app/db.sqlite3  # Mounts the SQLite file to persist data
     env_file:
       - .env.docker  # Load environment variables from .env.docker file in Docker environment
