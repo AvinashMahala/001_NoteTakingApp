@@ -41,7 +41,7 @@ services:
       - kafka  # Ensures Redis starts after Kafka
 
   # 5. Backend Django - Main application service, starts after all dependencies
-  django:
+  backend_django:
     build: ./backend_django
     ports:
       - "8080:8080"  # Django listens on port 8080 for API requests
@@ -61,7 +61,7 @@ services:
     ports:
       - "5000:5000"  # Flask listens on port 5000 for internal API requests
     depends_on:
-      - django  # Ensures Flask starts after Django
+      - backend_django  # Ensures Flask starts after Django
 
   # 7. Frontend - React or similar frontend application, depends on backend services
   frontend:
@@ -69,5 +69,22 @@ services:
     ports:
       - "3000:3000"  # Frontend listens on port 3000 for client requests
     depends_on:
-      - django  # Waits for Django to start
+      - backend_django  # Waits for Django to start
+      - backend_flask  # Waits for Flask to start
+
+  # 8. API Gateway
+  api_gateway:
+    image: kong:latest
+    environment:
+      - KONG_DATABASE=off
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+    ports:
+      - "8082:8000"  # Use 8082 for the API Gateway public port instead of 8000
+      - "8001:8001"  # Port for the admin API (restricted access)
+    depends_on:
+      - backend_django  # Waits for Django to start
       - backend_flask  # Waits for Flask to start
