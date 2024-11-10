@@ -1,32 +1,26 @@
-// frontend/src/components/NoteModal.tsx
+// frontend/src/components/Modal/NoteModal.tsx
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
-import { Note } from "./../../types/noteTypes";
+import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import { Note } from '../../types/noteTypes';
 
 interface NoteModalProps {
   show: boolean;
   onHide: () => void;
   onSave: (noteData: Partial<Note>) => void;
   note?: Note | null;
+  errors?: { title?: string; content?: string };
 }
 
-const NoteModal: React.FC<NoteModalProps> = ({ show, onHide, onSave, note }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+const NoteModal: React.FC<NoteModalProps> = ({ show, onHide, onSave, note, errors = {} }) => {
+  const [title, setTitle] = useState(note?.title || '');
+  const [content, setContent] = useState(note?.content || '');
 
   useEffect(() => {
-    if (note) {
-      setTitle(note.title);
-      setContent(note.content);
-    } else {
-      setTitle('');
-      setContent('');
-    }
+    setTitle(note?.title || '');
+    setContent(note?.content || '');
   }, [note]);
 
-  const handleSave = () => {
-    onSave({ title, content });
-  };
+  const handleSave = () => onSave({ title, content });
 
   return (
     <Modal show={show} onHide={onHide}>
@@ -42,7 +36,9 @@ const NoteModal: React.FC<NoteModalProps> = ({ show, onHide, onSave, note }) => 
               value={title}
               placeholder="Enter title"
               onChange={(e) => setTitle(e.target.value)}
+              isInvalid={!!errors.title}
             />
+            <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>
           </Form.Group>
           <Form.Group controlId="formContent" className="mt-3">
             <Form.Label>Content</Form.Label>
@@ -52,7 +48,9 @@ const NoteModal: React.FC<NoteModalProps> = ({ show, onHide, onSave, note }) => 
               value={content}
               placeholder="Enter content"
               onChange={(e) => setContent(e.target.value)}
+              isInvalid={!!errors.content}
             />
+            <Form.Control.Feedback type="invalid">{errors.content}</Form.Control.Feedback>
           </Form.Group>
         </Form>
       </Modal.Body>
