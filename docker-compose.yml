@@ -45,8 +45,11 @@ services:
     build: ./backend_django
     ports:
       - "8080:8080"  # Django listens on port 8080 for API requests
+    volumes:
+      - ./backend_django/db.sqlite3:/app/db.sqlite3  # Mounts the SQLite file to persist data
+    env_file:
+      - .env.docker  # Load environment variables from .env.docker file in Docker environment
     environment:
-      - DOCKER_ENV=1
       - DJANGO_SETTINGS_MODULE=note_api.settings
     depends_on:
       - kafka  # Waits for Kafka to start
@@ -54,7 +57,9 @@ services:
       # Uncomment if using PostgreSQL and Redis
       # - db
       # - redis
-    command: sh -c "sleep 20 && python manage.py runserver 0.0.0.0:8080"  # Adds a delay to ensure Kafka readiness
+    command: sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             sleep 20 && python manage.py runserver 0.0.0.0:8080"  # Adds a delay to ensure Kafka readiness
 
   # 6. Backend Flask - Microservice that depends on Django backend
   backend_flask:

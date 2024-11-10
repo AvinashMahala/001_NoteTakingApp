@@ -4,7 +4,7 @@ import json
 import time
 from kafka import KafkaProducer
 
-# Load the appropriate .env file based on environment
+# Determine which .env file to load based on the DOCKER_ENV variable
 env_file = ".env.docker" if os.getenv("DOCKER_ENV") == "1" else ".env.local"
 load_dotenv(env_file)
 
@@ -14,6 +14,7 @@ def get_kafka_producer():
 
     # Get Kafka server address from environment variables
     kafka_server = os.getenv("KAFKA_SERVER", "localhost:9092")
+    print(f"Connecting to Kafka server at: {kafka_server}")
 
     for attempt in range(1, retries + 1):
         try:

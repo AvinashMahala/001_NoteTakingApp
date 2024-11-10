@@ -1,3 +1,4 @@
+# In backend_django/notes/views.py
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 from .models import Note
@@ -5,7 +6,7 @@ from .serializers import NoteSerializer
 from .kafka_producer import send_note_event  # Import the Kafka producer function
 
 class NoteViewSet(viewsets.ModelViewSet):
-    queryset = Note.objects.all()
+    queryset = Note.objects.all().order_by('-created_at')
     serializer_class = NoteSerializer
 
     # Override the create method to produce a Kafka message when a note is created
@@ -22,7 +23,7 @@ class NoteViewSet(viewsets.ModelViewSet):
                 "title": note.title,
                 "content": note.content,
                 "created_at": note.created_at.isoformat(),
-                "updated_at": note.updated_at.isoformat()
+                "updated_at": note.updated_at.isoformat(),
             }
         }
 
@@ -48,7 +49,7 @@ class NoteViewSet(viewsets.ModelViewSet):
                 "title": note.title,
                 "content": note.content,
                 "created_at": note.created_at.isoformat(),
-                "updated_at": note.updated_at.isoformat()
+                "updated_at": note.updated_at.isoformat(),
             }
         }
 

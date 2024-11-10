@@ -1,9 +1,10 @@
+# In backend_django/notes/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import NoteViewSet
 
 router = DefaultRouter()
-router.register(r'notes', NoteViewSet)  # Register the viewset
+router.register(r'notes', NoteViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
