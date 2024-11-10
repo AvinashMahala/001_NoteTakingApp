@@ -46,6 +46,7 @@ services:
     ports:
       - "8080:8080"  # Django listens on port 8080 for API requests
     environment:
+      - DOCKER_ENV=1
       - DJANGO_SETTINGS_MODULE=note_api.settings
     depends_on:
       - kafka  # Waits for Kafka to start

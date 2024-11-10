@@ -1,19 +1,29 @@
-from kafka import KafkaProducer
+from dotenv import load_dotenv
+import os
 import json
 import time
+from kafka import KafkaProducer
+
+# Load the appropriate .env file based on environment
+env_file = ".env.docker" if os.getenv("DOCKER_ENV") == "1" else ".env.local"
+load_dotenv(env_file)
 
 def get_kafka_producer():
     retries = 5
     retry_delay = 5  # seconds between retries
+
+    # Get Kafka server address from environment variables
+    kafka_server = os.getenv("KAFKA_SERVER", "localhost:9092")
+
     for attempt in range(1, retries + 1):
         try:
-            print(f"Attempt {attempt}/{retries}: Connecting to Kafka...")
+            print(f"Attempt {attempt}/{retries}: Connecting to Kafka at {kafka_server}...")
             producer = KafkaProducer(
-                bootstrap_servers='kafka:9092',  # Use the Kafka service name if using Docker
+                bootstrap_servers=kafka_server,
                 value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-                request_timeout_ms=10000,  # Increase the timeout for each connection attempt
-                retries=3,                 # Number of retries for the producer itself
-                retry_backoff_ms=1000      # Delay between retries in milliseconds
+                request_timeout_ms=10000,
+                retries=3,
+                retry_backoff_ms=1000
             )
             print("Kafka connection established.")
             return producer
@@ -37,12 +47,3 @@ def send_note_event(note_data):
         print("Event sent successfully.")
     except Exception as e:
         print(f"Failed to send event to Kafka: {e}")
-
-# Example usage
-if __name__ == "__main__":
-    note_data = {
-        "title": "Sample Note",
-        "content": "This is a test note",
-        "timestamp": time.time()
-    }
-    send_note_event(note_data)
