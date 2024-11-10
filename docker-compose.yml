@@ -33,12 +33,12 @@ services:
 
   # 4. Redis (Optional) - Starts after Kafka for caching purposes
   # Uncomment the following lines if using Redis for caching
-  # redis:
-  #   image: redis:alpine
-  #   ports:
-  #     - "6379:6379"
-  #   depends_on:
-  #     - kafka  # Ensures Redis starts after Kafka
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    depends_on:
+      - kafka  # Ensures Redis starts after Kafka
 
   # 5. Backend Django - Main application service, starts after all dependencies
   django:
