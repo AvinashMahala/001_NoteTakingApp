@@ -1,7 +1,7 @@
 // frontend/src/components/NotesApp.tsx
 import React, { useState, useEffect } from 'react';
 import { fetchNotes, createNote, updateNote, deleteNote, Note } from '../services/noteService';
-import { Container, Row, Col, Button, Modal, Form, Table } from 'react-bootstrap';
+import { Container, Row, Col, Button, Modal, Form, Table, Alert } from 'react-bootstrap';
 
 const NotesApp: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -9,14 +9,19 @@ const NotesApp: React.FC = () => {
   const [content, setContent] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<{ type: string; text: string } | null>(null);
 
   useEffect(() => {
     loadNotes();
   }, []);
 
   const loadNotes = async () => {
-    const notes = await fetchNotes();
-    setNotes(notes);
+    try {
+      const notes = await fetchNotes();
+      setNotes(notes);
+    } catch (error) {
+      setAlertMessage({ type: 'danger', text: 'Failed to load notes.' });
+    }
   };
 
   const handleOpenModal = (note?: Note) => {
@@ -35,23 +40,45 @@ const NotesApp: React.FC = () => {
   const handleCloseModal = () => setShowModal(false);
 
   const handleSaveNote = async () => {
-    if (editId) {
-      await updateNote(editId, { title, content });
-    } else {
-      await createNote({ title, content });
+    try {
+      if (editId) {
+        await updateNote(editId, { title, content });
+        setAlertMessage({ type: 'success', text: 'Note updated successfully.' });
+      } else {
+        await createNote({ title, content });
+        setAlertMessage({ type: 'success', text: 'Note added successfully.' });
+      }
+      loadNotes();
+      handleCloseModal();
+    } catch (error) {
+      setAlertMessage({ type: 'danger', text: 'Failed to save note.' });
     }
-    loadNotes();
-    handleCloseModal();
   };
 
   const handleDeleteNote = async (id: number) => {
-    await deleteNote(id);
-    loadNotes();
+    try {
+      await deleteNote(id);
+      setAlertMessage({ type: 'success', text: 'Note deleted successfully.' });
+      loadNotes();
+    } catch (error) {
+      setAlertMessage({ type: 'danger', text: 'Failed to delete note.' });
+    }
   };
 
   return (
     <Container className="my-4">
       <h1 className="text-center mb-4">Notes App</h1>
+
+      {/* Display Alert Message */}
+      {alertMessage && (
+        <Alert
+          variant={alertMessage.type}
+          onClose={() => setAlertMessage(null)}
+          dismissible
+        >
+          {alertMessage.text}
+        </Alert>
+      )}
 
       <Row>
         <Col>
