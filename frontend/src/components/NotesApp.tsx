@@ -1,15 +1,15 @@
 // frontend/src/components/NotesApp.tsx
 import React, { useState, useEffect } from 'react';
 import { fetchNotes, createNote, updateNote, deleteNote, Note } from '../services/noteService';
-import { Container, Row, Col, Button, Form, ListGroup, Card } from 'react-bootstrap';
+import { Container, Row, Col, Button, Modal, Form, Table } from 'react-bootstrap';
 
 const NotesApp: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
-  // Fetch notes on component mount
   useEffect(() => {
     loadNotes();
   }, []);
@@ -19,22 +19,29 @@ const NotesApp: React.FC = () => {
     setNotes(notes);
   };
 
-  const handleAddNote = async () => {
+  const handleOpenModal = (note?: Note) => {
+    if (note) {
+      setEditId(note.id);
+      setTitle(note.title);
+      setContent(note.content);
+    } else {
+      setEditId(null);
+      setTitle('');
+      setContent('');
+    }
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => setShowModal(false);
+
+  const handleSaveNote = async () => {
     if (editId) {
       await updateNote(editId, { title, content });
-      setEditId(null);
     } else {
       await createNote({ title, content });
     }
-    setTitle('');
-    setContent('');
     loadNotes();
-  };
-
-  const handleEditNote = (note: Note) => {
-    setEditId(note.id);
-    setTitle(note.title);
-    setContent(note.content);
+    handleCloseModal();
   };
 
   const handleDeleteNote = async (id: number) => {
@@ -45,71 +52,88 @@ const NotesApp: React.FC = () => {
   return (
     <Container className="my-4">
       <h1 className="text-center mb-4">Notes App</h1>
-      <Row>
-        <Col md={6} className="mx-auto">
-          <Card className="p-4">
-            <Form>
-              <Form.Group controlId="formTitle">
-                <Form.Label>Title</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={title}
-                  placeholder="Enter title"
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group controlId="formContent" className="mt-3">
-                <Form.Label>Content</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  value={content}
-                  placeholder="Enter content"
-                  onChange={(e) => setContent(e.target.value)}
-                />
-              </Form.Group>
-              <Button
-  variant="primary"
-  onClick={handleAddNote}
-  className="mt-3 w-100"  // Use 'w-100' to make the button full-width
->
-  {editId ? 'Update Note' : 'Add Note'}
-</Button>
 
-            </Form>
-          </Card>
+      <Row>
+        <Col>
+          <Button variant="primary" onClick={() => handleOpenModal()} className="mb-3">
+            Add New Note
+          </Button>
+          
+          {/* Bootstrap Table to Display Notes */}
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Content</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {notes.map((note) => (
+                <tr key={note.id}>
+                  <td>{note.title}</td>
+                  <td>{note.content}</td>
+                  <td>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => handleOpenModal(note)}
+                      className="me-2"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => handleDeleteNote(note.id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
         </Col>
       </Row>
-      <Row className="mt-5">
-        <Col md={8} className="mx-auto">
-          <h3 className="text-center">My Notes</h3>
-          <ListGroup>
-            {notes.map((note) => (
-              <ListGroup.Item key={note.id} className="d-flex justify-content-between align-items-start">
-                <div className="ms-2 me-auto">
-                  <div className="fw-bold">{note.title}</div>
-                  <small>{note.content}</small>
-                </div>
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={() => handleEditNote(note)}
-                  className="me-2"
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  onClick={() => handleDeleteNote(note.id)}
-                >
-                  Delete
-                </Button>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-        </Col>
-      </Row>
+
+      {/* Modal for creating/updating a note */}
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{editId ? 'Update Note' : 'Add Note'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="formTitle">
+              <Form.Label>Title</Form.Label>
+              <Form.Control
+                type="text"
+                value={title}
+                placeholder="Enter title"
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group controlId="formContent" className="mt-3">
+              <Form.Label>Content</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={content}
+                placeholder="Enter content"
+                onChange={(e) => setContent(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveNote}>
+            {editId ? 'Update Note' : 'Add Note'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
