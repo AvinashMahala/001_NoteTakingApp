@@ -9,7 +9,7 @@ const api = axios.create({
 
 // Fetch all notes
 export const fetchNotes = async (): Promise<Note[]> => {
-  const response = await api.get<Note[]>('notes/');
+  const response = await api.get<Note[]>('notes/list');
   return response.data;
 };
 
