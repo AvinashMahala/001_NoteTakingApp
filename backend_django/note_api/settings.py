@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'notes',
 ]
 
+APPEND_SLASH = False
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 CACHES = {
     'default': {
