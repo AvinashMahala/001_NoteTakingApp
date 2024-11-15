@@ -22,6 +22,8 @@ interface AlertMessageType {
   text: string;
 }
 
+
+
 const NotesApp: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [editNote, setEditNote] = useState<Note | null>(null);
@@ -227,26 +229,54 @@ const NotesApp: React.FC = () => {
           />
           {!isSearching && (
             <Row className="justify-content-center">
-              <Pagination>
-                <Pagination.Prev
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                />
-                {[...Array(totalPages)].map((_, index) => (
+            <Pagination>
+              {/* Previous Button */}
+              <Pagination.Prev
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              />
+          
+              {/* First Page */}
+              {currentPage > 4 && (
+                <>
+                  <Pagination.Item onClick={() => handlePageChange(1)}>1</Pagination.Item>
+                  {currentPage > 5 && <Pagination.Ellipsis disabled />}
+                </>
+              )}
+          
+              {/* Dynamic Page Numbers */}
+              {[...Array(totalPages)]
+                .map((_, index) => index + 1)
+                .filter(
+                  (page) =>
+                    page === 1 || page === totalPages || (page >= currentPage - 2 && page <= currentPage + 2)
+                )
+                .map((page) => (
                   <Pagination.Item
-                    key={index + 1}
-                    active={index + 1 === currentPage}
-                    onClick={() => handlePageChange(index + 1)}
+                    key={page}
+                    active={page === currentPage}
+                    onClick={() => handlePageChange(page)}
                   >
-                    {index + 1}
+                    {page}
                   </Pagination.Item>
                 ))}
-                <Pagination.Next
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                />
-              </Pagination>
-            </Row>
+          
+              {/* Last Page */}
+              {currentPage < totalPages - 3 && (
+                <>
+                  {currentPage < totalPages - 4 && <Pagination.Ellipsis disabled />}
+                  <Pagination.Item onClick={() => handlePageChange(totalPages)}>{totalPages}</Pagination.Item>
+                </>
+              )}
+          
+              {/* Next Button */}
+              <Pagination.Next
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              />
+            </Pagination>
+          </Row>
+          
           )}
         </Col>
       </Row>
