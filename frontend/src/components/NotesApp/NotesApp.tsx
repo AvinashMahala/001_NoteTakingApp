@@ -275,7 +275,44 @@ const NotesApp: React.FC = () => {
                 disabled={currentPage === totalPages}
               />
             </Pagination>
+          
+            {/* Page Search Input */}
+            <InputGroup className="mt-3" style={{ maxWidth: '200px' }}>
+              <FormControl
+                type="number"
+                placeholder="Go to page..."
+                min={1}
+                max={totalPages}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const page = parseInt((e.target as HTMLInputElement).value);
+                    if (page >= 1 && page <= totalPages) {
+                      handlePageChange(page);
+                    } else {
+                      alert('Please enter a valid page number.');
+                    }
+                  }
+                }}
+              />
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const input = document.querySelector<HTMLInputElement>('input[type="number"]');
+                  if (input) {
+                    const page = parseInt(input.value);
+                    if (page >= 1 && page <= totalPages) {
+                      handlePageChange(page);
+                    } else {
+                      alert('Please enter a valid page number.');
+                    }
+                  }
+                }}
+              >
+                Go
+              </Button>
+            </InputGroup>
           </Row>
+          
           
           )}
         </Col>
