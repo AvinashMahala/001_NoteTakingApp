@@ -7,6 +7,7 @@ from .models import Note
 from .serializers import NoteSerializer
 from .kafka_producer import send_note_event  # Import the Kafka producer function
 import logging
+from faker import Faker
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,24 @@ class NoteViewSet(viewsets.ModelViewSet):
         cache.set('notes_list', notes_data, timeout=300)
 
         return Response(notes_data)
+
+    @action(detail=False, methods=['post'], url_path='generate_dummy_data')
+    def generate_dummy_data(self, request):
+        fake = Faker()
+        dummy_notes = []
+
+        # Create 100 dummy notes
+        for _ in range(100):
+            note = Note(
+                title=fake.sentence(nb_words=6),
+                content=fake.paragraph(nb_sentences=3),
+                # Add any other fields you need to populate with fake data
+            )
+            note.save()
+            dummy_notes.append(note)
+
+        serializer = NoteSerializer(dummy_notes, many=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

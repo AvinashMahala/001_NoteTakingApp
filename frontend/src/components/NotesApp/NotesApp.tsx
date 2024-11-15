@@ -1,4 +1,3 @@
-// frontend/src/components/NotesApp/NotesApp.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Modal, Spinner } from 'react-bootstrap';
 import { fetchNotes, createNote, updateNote, deleteNote } from '../../services/noteService';
@@ -83,6 +82,28 @@ const NotesApp: React.FC = () => {
     setShowModal(true);
   };
 
+  // Function to generate 100 dummy notes
+  const generateDummyData = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/notes/generate_dummy_data/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        showAlert('success', '100 dummy notes generated successfully.');
+        loadNotes(); // Reload notes to display the new dummy data
+      } else {
+        showAlert('danger', 'Failed to generate dummy notes.');
+      }
+    } catch (error) {
+      console.error("Error generating dummy notes:", error);
+      showAlert('danger', 'Error generating dummy notes.');
+    }
+  };
+
   return (
     <Container className="my-4">
       <h1 className="text-center mb-4">Notes App</h1>
@@ -100,6 +121,9 @@ const NotesApp: React.FC = () => {
         <Col className="d-flex justify-content-between align-items-center mb-3">
           <Button variant="primary" onClick={() => handleOpenModal()}>
             Add New Note
+          </Button>
+          <Button variant="secondary" onClick={generateDummyData}>
+            Generate 100 Dummy Notes
           </Button>
           {loading && <Spinner animation="border" />}
         </Col>
