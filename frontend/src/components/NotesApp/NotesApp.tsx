@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Button, Modal, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Button, Modal, Spinner, Pagination } from 'react-bootstrap';
 import { fetchNotes, createNote, updateNote, deleteNote } from '../../services/noteService';
 import AlertMessage from '../Alert/AlertMessage';
 import NoteModal from '../Modal/NoteModal';
@@ -19,17 +19,23 @@ const NotesApp: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const showAlert = useCallback((type: AlertMessageType['type'], text: string) => {
     setAlertMessage({ type, text });
     setTimeout(() => setAlertMessage(null), 3000);
   }, []);
 
-  const loadNotes = useCallback(async () => {
+  // Modified loadNotes function to handle pagination
+  const loadNotes = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const notes = await fetchNotes();
-      setNotes(notes);
+      const response = await fetch(`http://localhost:8080/api/notes/?page=${page}`);
+      const data = await response.json();
+      setNotes(data.results); // API response data
+      setTotalPages(Math.ceil(data.count / 10)); // Calculate total pages
+      setCurrentPage(page); // Set the current page
     } catch {
       showAlert('danger', 'Failed to load notes.');
     } finally {
@@ -50,7 +56,7 @@ const NotesApp: React.FC = () => {
         await createNote(noteData);
         showAlert('success', 'Note added successfully.');
       }
-      loadNotes();
+      loadNotes(currentPage);
       setShowModal(false);
     } catch {
       showAlert('danger', 'Failed to save note.');
@@ -67,7 +73,7 @@ const NotesApp: React.FC = () => {
       try {
         await deleteNote(noteToDelete);
         showAlert('success', 'Note deleted successfully.');
-        loadNotes();
+        loadNotes(currentPage);
       } catch {
         showAlert('danger', 'Failed to delete note.');
       } finally {
@@ -82,26 +88,9 @@ const NotesApp: React.FC = () => {
     setShowModal(true);
   };
 
-  // Function to generate 100 dummy notes
-  const generateDummyData = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/api/notes/generate_dummy_data/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      
-      if (response.ok) {
-        showAlert('success', '100 dummy notes generated successfully.');
-        loadNotes(); // Reload notes to display the new dummy data
-      } else {
-        showAlert('danger', 'Failed to generate dummy notes.');
-      }
-    } catch (error) {
-      console.error("Error generating dummy notes:", error);
-      showAlert('danger', 'Error generating dummy notes.');
-    }
+  // Pagination controls
+  const handlePageChange = (page: number) => {
+    loadNotes(page);
   };
 
   return (
@@ -122,7 +111,7 @@ const NotesApp: React.FC = () => {
           <Button variant="primary" onClick={() => handleOpenModal()}>
             Add New Note
           </Button>
-          <Button variant="secondary" onClick={generateDummyData}>
+          <Button variant="secondary" onClick={() => loadNotes(currentPage)}>
             Generate 100 Dummy Notes
           </Button>
           {loading && <Spinner animation="border" />}
@@ -133,6 +122,29 @@ const NotesApp: React.FC = () => {
         <Col>
           <NoteList notes={notes} onEdit={handleOpenModal} onDelete={confirmDeleteNote} />
         </Col>
+      </Row>
+
+      {/* Pagination Controls */}
+      <Row className="justify-content-center">
+        <Pagination>
+          <Pagination.Prev
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          />
+          {[...Array(totalPages)].map((_, index) => (
+            <Pagination.Item
+              key={index + 1}
+              active={index + 1 === currentPage}
+              onClick={() => handlePageChange(index + 1)}
+            >
+              {index + 1}
+            </Pagination.Item>
+          ))}
+          <Pagination.Next
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          />
+        </Pagination>
       </Row>
 
       {/* Modal for creating/updating a note */}

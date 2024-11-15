@@ -54,6 +54,12 @@ APPEND_SLASH = False
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,  # Number of items per page
+}
+
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',

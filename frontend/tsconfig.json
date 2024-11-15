@@ -23,5 +23,12 @@
   "include": [
     "src", // Ensure src is included
     "src/declarations" // Include the declarations folder
-  ]
+  ],
+  // "watchOptions": {
+  //   "watchFile": "useFsEventsOnParentDirectory",
+  //   "watchDirectory": "fixedpollinginterval",
+  //   "fallbackPolling": "dynamicpriority"
+  // }
+  
 }
+
