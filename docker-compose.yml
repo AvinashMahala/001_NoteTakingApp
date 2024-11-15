@@ -40,6 +40,34 @@ services:
     depends_on:
       - kafka  # Ensures Redis starts after Kafka
 
+  # Elasticsearch service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    environment:
+      - discovery.type=single-node  # Run in single-node mode
+      - xpack.security.enabled=false  # Disable security for easier local testing
+    ports:
+      - "9200:9200"  # Map Elasticsearch port to localhost
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+
+
+  # Optional: Kibana for visualizing Elasticsearch data
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.1
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200  # Link Kibana to Elasticsearch
+    ports:
+      - "5601:5601"  # Expose Kibana on port 5601
+    depends_on:
+      - elasticsearch
+
+
+      
   # 5. Backend Django - Main application service, starts after all dependencies
   backend_django:
     build: ./backend_django

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Button, Modal, Spinner, Pagination } from 'react-bootstrap';
+import { Container, Row, Col, Button, Modal, Spinner, Pagination, InputGroup, FormControl } from 'react-bootstrap';
 import { fetchNotes, createNote, updateNote, deleteNote } from '../../services/noteService';
 import AlertMessage from '../Alert/AlertMessage';
 import NoteModal from '../Modal/NoteModal';
@@ -22,20 +22,48 @@ const NotesApp: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Note[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const showAlert = useCallback((type: AlertMessageType['type'], text: string) => {
     setAlertMessage({ type, text });
     setTimeout(() => setAlertMessage(null), 3000);
   }, []);
 
-  // Modified loadNotes function to handle pagination
+  // Function to handle search requests
+  const handleSearch = async () => {
+    if (!query) {
+      setIsSearching(false); // Clear search results if query is empty
+      loadNotes();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8080/api/notes/search/?q=${query}`);
+      if (!response.ok) throw new Error('Failed to fetch search results');
+      const results = await response.json();
+      setSearchResults(results);
+      setIsSearching(true); // Set search mode on
+    } catch (error) {
+      console.error('Error:', error);
+      showAlert('danger', 'Error fetching search results.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load all notes with pagination
   const loadNotes = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       const response = await fetch(`http://localhost:8080/api/notes/?page=${page}`);
       const data = await response.json();
-      setNotes(data.results); // API response data
-      setTotalPages(Math.ceil(data.count / 10)); // Calculate total pages
-      setCurrentPage(page); // Set the current page
+      setNotes(data.results);
+      setTotalPages(Math.ceil(data.count / 10));
+      setCurrentPage(page);
+      setIsSearching(false); // Switch back to normal mode when loading all notes
     } catch {
       showAlert('danger', 'Failed to load notes.');
     } finally {
@@ -106,6 +134,21 @@ const NotesApp: React.FC = () => {
         />
       )}
 
+      <Row className="mb-3">
+        <Col>
+          <InputGroup>
+            <FormControl
+              placeholder="Search notes..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <Button variant="primary" onClick={handleSearch} disabled={loading}>
+              {loading ? 'Searching...' : 'Search'}
+            </Button>
+          </InputGroup>
+        </Col>
+      </Row>
+
       <Row>
         <Col className="d-flex justify-content-between align-items-center mb-3">
           <Button variant="primary" onClick={() => handleOpenModal()}>
@@ -120,31 +163,31 @@ const NotesApp: React.FC = () => {
 
       <Row>
         <Col>
-          <NoteList notes={notes} onEdit={handleOpenModal} onDelete={confirmDeleteNote} />
+          <NoteList notes={isSearching ? searchResults : notes} onEdit={handleOpenModal} onDelete={confirmDeleteNote} />
+          {!isSearching && (
+            <Row className="justify-content-center">
+              <Pagination>
+                <Pagination.Prev
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                />
+                {[...Array(totalPages)].map((_, index) => (
+                  <Pagination.Item
+                    key={index + 1}
+                    active={index + 1 === currentPage}
+                    onClick={() => handlePageChange(index + 1)}
+                  >
+                    {index + 1}
+                  </Pagination.Item>
+                ))}
+                <Pagination.Next
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                />
+              </Pagination>
+            </Row>
+          )}
         </Col>
-      </Row>
-
-      {/* Pagination Controls */}
-      <Row className="justify-content-center">
-        <Pagination>
-          <Pagination.Prev
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          />
-          {[...Array(totalPages)].map((_, index) => (
-            <Pagination.Item
-              key={index + 1}
-              active={index + 1 === currentPage}
-              onClick={() => handlePageChange(index + 1)}
-            >
-              {index + 1}
-            </Pagination.Item>
-          ))}
-          <Pagination.Next
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          />
-        </Pagination>
       </Row>
 
       {/* Modal for creating/updating a note */}

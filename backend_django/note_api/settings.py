@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'notes',
+    'django_elasticsearch_dsl'
 ]
 
 APPEND_SLASH = False
@@ -57,6 +58,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,  # Number of items per page
+}
+
+
+# Django Elasticsearch DSL connection configuration
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'elasticsearch:9200',  # Ensure this matches your Docker container name and port
+    },
 }
 
 

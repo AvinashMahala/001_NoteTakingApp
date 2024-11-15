@@ -1,15 +1,41 @@
 # backend_django/notes/views.py
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from django.core.cache import cache
 from .models import Note
 from .serializers import NoteSerializer
 from .kafka_producer import send_note_event  # Import the Kafka producer function
+from .documents import NoteDocument  # Import NoteDocument for Elasticsearch
 import logging
 from faker import Faker
+from django.urls import get_resolver
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
+
+
+def show_urls(request):
+    urls = []
+    url_patterns = get_resolver().url_patterns
+    for pattern in url_patterns:
+        urls.append(str(pattern))
+    return JsonResponse(urls, safe=False)
+
+
+# Define search_notes as a standalone API view
+@api_view(['GET'])
+def search_notes(request):
+    query = request.GET.get('q', '')
+    search = NoteDocument.search().query("multi_match", query=query, fields=["title", "content"])
+    results = search.to_queryset()
+
+    return Response([{
+        "id": note.id,
+        "title": note.title,
+        "content": note.content,
+        "created_at": note.created_at
+    } for note in results])
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all().order_by('-created_at')

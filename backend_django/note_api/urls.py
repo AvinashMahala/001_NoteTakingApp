@@ -5,4 +5,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('notes.urls')),  # Adding the notes API endpoint
+     path('', include('notes.urls')),  # Include URLs from notes app
 ]
