@@ -31,6 +31,28 @@ const NotesApp: React.FC = () => {
     setTimeout(() => setAlertMessage(null), 3000);
   }, []);
 
+
+  const generateDummyData = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/notes/generate_dummy_data/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        alert("100 dummy notes generated successfully!");
+      } else {
+        alert("Failed to generate dummy notes");
+      }
+    } catch (error) {
+      console.error("Error generating dummy notes:", error);
+      alert("Error generating dummy notes");
+    }
+  };
+
+
   // Function to handle search requests
   const handleSearch = async () => {
     if (!query) {
@@ -154,7 +176,7 @@ const NotesApp: React.FC = () => {
           <Button variant="primary" onClick={() => handleOpenModal()}>
             Add New Note
           </Button>
-          <Button variant="secondary" onClick={() => loadNotes(currentPage)}>
+          <Button variant="secondary" onClick={() => {generateDummyData();loadNotes(currentPage)}}>
             Generate 100 Dummy Notes
           </Button>
           {loading && <Spinner animation="border" />}
