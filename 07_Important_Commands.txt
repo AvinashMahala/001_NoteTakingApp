@@ -39,6 +39,5 @@ docker exec -it f1716e18aae5baa4d285a9ef07595be4b0fa08fbc581f081c3fea04e04873e19
 docker logs d7e80f1407329d63687e69a12765c9935796a873a1b1ff7c570593e79ba73b4c
 
 
-
 docker-compose exec backend_django python manage.py search_index --create
 docker-compose exec backend_django python manage.py search_index --populate

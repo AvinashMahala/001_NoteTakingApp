@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Button, Modal, Spinner, Pagination, InputGroup, FormControl } from 'react-bootstrap';
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Modal,
+  Spinner,
+  Pagination,
+  InputGroup,
+  FormControl,
+  ProgressBar,
+} from 'react-bootstrap';
 import { fetchNotes, createNote, updateNote, deleteNote } from '../../services/noteService';
 import AlertMessage from '../Alert/AlertMessage';
 import NoteModal from '../Modal/NoteModal';
@@ -26,37 +37,46 @@ const NotesApp: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Note[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const [progress, setProgress] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const showAlert = useCallback((type: AlertMessageType['type'], text: string) => {
     setAlertMessage({ type, text });
     setTimeout(() => setAlertMessage(null), 3000);
   }, []);
 
-
   const generateDummyData = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/api/notes/generate_dummy_data/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    setIsGenerating(true);
+    setProgress(0);
 
-      if (response.ok) {
-        alert("100 dummy notes generated successfully!");
-      } else {
-        alert("Failed to generate dummy notes");
+    try {
+      const totalRecords = 100;
+      const batchSize = 10;
+
+      for (let i = 1; i <= totalRecords / batchSize; i++) {
+        await fetch('http://localhost:8080/api/notes/generate_dummy_data/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        setProgress((i / (totalRecords / batchSize)) * 100);
       }
+
+      showAlert('success', '100 dummy notes generated successfully!');
     } catch (error) {
-      console.error("Error generating dummy notes:", error);
-      alert("Error generating dummy notes");
+      console.error('Error generating dummy notes:', error);
+      showAlert('danger', 'Failed to generate dummy notes.');
+    } finally {
+      setIsGenerating(false);
+      loadNotes(currentPage);
     }
   };
 
-
-  // Function to handle search requests
   const handleSearch = async () => {
     if (!query) {
-      setIsSearching(false); // Clear search results if query is empty
+      setIsSearching(false);
       loadNotes();
       return;
     }
@@ -67,7 +87,7 @@ const NotesApp: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch search results');
       const results = await response.json();
       setSearchResults(results);
-      setIsSearching(true); // Set search mode on
+      setIsSearching(true);
     } catch (error) {
       console.error('Error:', error);
       showAlert('danger', 'Error fetching search results.');
@@ -76,7 +96,6 @@ const NotesApp: React.FC = () => {
     }
   };
 
-  // Load all notes with pagination
   const loadNotes = useCallback(async (page = 1) => {
     setLoading(true);
     try {
@@ -85,7 +104,7 @@ const NotesApp: React.FC = () => {
       setNotes(data.results);
       setTotalPages(Math.ceil(data.count / 10));
       setCurrentPage(page);
-      setIsSearching(false); // Switch back to normal mode when loading all notes
+      setIsSearching(false);
     } catch {
       showAlert('danger', 'Failed to load notes.');
     } finally {
@@ -138,7 +157,6 @@ const NotesApp: React.FC = () => {
     setShowModal(true);
   };
 
-  // Pagination controls
   const handlePageChange = (page: number) => {
     loadNotes(page);
   };
@@ -147,7 +165,6 @@ const NotesApp: React.FC = () => {
     <Container className="my-4">
       <h1 className="text-center mb-4">Notes App</h1>
 
-      {/* Display Alert Message */}
       {alertMessage && (
         <AlertMessage
           type={alertMessage.type}
@@ -167,6 +184,16 @@ const NotesApp: React.FC = () => {
             <Button variant="primary" onClick={handleSearch} disabled={loading}>
               {loading ? 'Searching...' : 'Search'}
             </Button>
+            <Button
+              variant="outline-secondary"
+              onClick={() => {
+                setQuery('');
+                loadNotes();
+              }}
+              disabled={isSearching || loading}
+            >
+              Clear Search
+            </Button>
           </InputGroup>
         </Col>
       </Row>
@@ -176,16 +203,28 @@ const NotesApp: React.FC = () => {
           <Button variant="primary" onClick={() => handleOpenModal()}>
             Add New Note
           </Button>
-          <Button variant="secondary" onClick={() => {generateDummyData();loadNotes(currentPage)}}>
-            Generate 100 Dummy Notes
+          <Button variant="secondary" onClick={generateDummyData} disabled={isGenerating}>
+            {isGenerating ? 'Generating...' : 'Generate 100 Dummy Notes'}
           </Button>
           {loading && <Spinner animation="border" />}
         </Col>
       </Row>
 
+      {isGenerating && (
+        <Row className="mb-3">
+          <Col>
+            <ProgressBar now={progress} label={`${Math.round(progress)}%`} />
+          </Col>
+        </Row>
+      )}
+
       <Row>
         <Col>
-          <NoteList notes={isSearching ? searchResults : notes} onEdit={handleOpenModal} onDelete={confirmDeleteNote} />
+          <NoteList
+            notes={isSearching ? searchResults : notes}
+            onEdit={handleOpenModal}
+            onDelete={confirmDeleteNote}
+          />
           {!isSearching && (
             <Row className="justify-content-center">
               <Pagination>
@@ -212,7 +251,6 @@ const NotesApp: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Modal for creating/updating a note */}
       <NoteModal
         show={showModal}
         onHide={() => setShowModal(false)}
@@ -220,7 +258,6 @@ const NotesApp: React.FC = () => {
         note={editNote}
       />
 
-      {/* Confirmation Modal for Deletion */}
       <Modal show={showDeleteConfirm} onHide={() => setShowDeleteConfirm(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Deletion</Modal.Title>
